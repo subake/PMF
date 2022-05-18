@@ -65,7 +65,30 @@ conda activate PMF
 	|--- salsanext_eval_nuscenes/ # evaluation code of SalsaNext on nuScenes
 ```
 
+### Dataset structure
 
+```bash
+|--- semantickitti/dataset/
+	|--- sequences/
+		|--- 00/ # track number
+			|--- poses.txt # poses for annotation
+			|--- calib.txt # camera calibration
+			|--- image_2/ # left images
+				|--- 000000.png
+				|--- 000001.png
+			|--- image_3/ # right images
+			|--- labels/ #labels for lidar scans
+				|--- 000000.label
+				|--- 000001.label
+			|--- velodyne/ # lidar scans
+				|--- 000000.bin
+				|--- 000001.bin
+		|--- 01/
+		.
+		.
+		. 
+		|--- 21/
+```
 
 ### Training
 

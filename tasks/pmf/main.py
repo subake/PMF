@@ -8,9 +8,24 @@ import trainer
 
 import pc_processor
 
+import wandb
+
 class Experiment(object):
     def __init__(self, settings: Option):
         self.settings = settings
+
+        #wandb login and configuration
+        wandb_conf = {'MODE': 'train',
+                    'MODEL': 'PMF',
+                    'Settings': self.settings}
+        
+        with open('./../../wandb.login', 'r') as wb_file:
+            wb_lines = wb_file.readlines()
+        wandb.login(key=wb_lines[2][:-1])
+        wandb.init(project=wb_lines[0][:-1], entity=wb_lines[1][:-1], dir='./../../experiments/')
+        wandb.config = wandb_conf
+
+
         # init gpu
         os.environ["CUDA_VISIBLE_DEVICES"] = self.settings.gpu
         pc_processor.utils.init_distributed_mode(self.settings)
@@ -94,6 +109,8 @@ class Experiment(object):
         # self.trainer.scheduler.step(self.epoch_start*len(self.trainer.train_loader))
         # if self.settings.optimizer == "Hybrid":
         #     self.trainer.aux_scheduler.step(self.epoch_start*len(self.trainer.train_loader))
+
+        wandb.watch(self.model, self.trainer.criterion, log="all", log_freq=48)
 
         for epoch in range(self.epoch_start, self.settings.n_epochs):
             

@@ -9,6 +9,8 @@ import pc_processor
 import math
 import torch.nn.functional as F
 
+import wandb
+
 
 class Trainer(object):
     def __init__(self, settings: Option, model: nn.Module, recorder=None):
@@ -431,19 +433,31 @@ class Trainer(object):
                     mean_acc_img.item(), mean_iou_img.item(), mean_recall_img.item(), entropy_img_meter.avg)
                 log_str += "RT {}".format(remain_time)
                 self.recorder.logger.info(log_str)
+            
+            if mode == "Train":
+                if (i+1) % 24 == 0:
+                    wandb.log({'Epoch': epoch, 'Lr': lr, 'Loss': loss.item(), 
+                               'Acc': mean_acc.item(), 'IoU': mean_iou.item(), 'Recall': mean_recall.item(),
+                               'Img_Acc': mean_acc_img.item(), 'Img_IoU': mean_iou_img.item(), 'Img_Recall': mean_recall_img.item()}, 
+                               step=epoch*total_iter + i)
+
 
             if self.settings.is_debug:
                 break
 
         # tensorboard logger
         if self.recorder is not None:
+            wandb_dict = {}
             # scalar log
             self.recorder.tensorboard.add_scalar(
                 tag="{}_Loss".format(mode), scalar_value=loss_meter.avg, global_step=epoch)
+            wandb_dict["{}_Loss".format(mode)] = loss_meter.avg
             self.recorder.tensorboard.add_scalar(
                 tag="{}_LossFocal".format(mode), scalar_value=loss_focal_meter.avg, global_step=epoch)
+            wandb_dict["{}_LossFocal".format(mode)] = loss_focal_meter.avg
             self.recorder.tensorboard.add_scalar(
                 tag="{}_LossLovasz".format(mode), scalar_value=loss_lovasz_meter.avg, global_step=epoch)
+            wandb_dict["{}_LossLovasz".format(mode)] = loss_lovasz_meter.avg
 
             self.recorder.tensorboard.add_scalar(
                 tag="{}_lr".format(mode), scalar_value=lr, global_step=epoch)
@@ -452,10 +466,13 @@ class Trainer(object):
 
             self.recorder.tensorboard.add_scalar(
                 tag="{}_meanAcc".format(mode), scalar_value=mean_acc.item(), global_step=epoch)
+            wandb_dict["{}_meanAcc".format(mode)] = mean_acc.item()
             self.recorder.tensorboard.add_scalar(
                 tag="{}_meanIOU".format(mode), scalar_value=mean_iou.item(), global_step=epoch)
+            wandb_dict["{}_meanIOU".format(mode)] = mean_iou.item()
             self.recorder.tensorboard.add_scalar(
                 tag="{}_meanRecall".format(mode), scalar_value=mean_recall.item(), global_step=epoch)
+            wandb_dict["{}_meanRecall".format(mode)] = mean_recall.item()
 
             for i, (_, v) in enumerate(self.mapped_cls_name.items()):
                 self.recorder.tensorboard.add_scalar(
@@ -468,20 +485,28 @@ class Trainer(object):
             # record img branch acc, recall and iou
             self.recorder.tensorboard.add_scalar(
                 tag="{}_LossImageFocal".format(mode), scalar_value=loss_img_focal_meter.avg, global_step=epoch)
+            wandb_dict["{}_LossImageFocal".format(mode)] = loss_img_focal_meter.avg
             self.recorder.tensorboard.add_scalar(
                 tag="{}_LossImageLovasz".format(mode), scalar_value=loss_img_lovasz_meter.avg, global_step=epoch)
+            wandb_dict["{}_LossImageLovasz".format(mode)] = loss_img_lovasz_meter.avg
             self.recorder.tensorboard.add_scalar(
                 tag="{}_ImageEntropy".format(mode), scalar_value=entropy_img_meter.avg, global_step=epoch)
 
             self.recorder.tensorboard.add_scalar(
                 tag="{}_LossPerception".format(mode), scalar_value=loss_perception_meter.avg, global_step=epoch)
+            wandb_dict["{}_LossPerception".format(mode)] = loss_perception_meter.avg
 
             self.recorder.tensorboard.add_scalar(
                 tag="{}_Image_meanAcc".format(mode), scalar_value=mean_acc_img.item(), global_step=epoch)
+            wandb_dict["{}_Image_meanAcc".format(mode)] = mean_acc_img.item()
             self.recorder.tensorboard.add_scalar(
                 tag="{}_Image_meanIOU".format(mode), scalar_value=mean_iou_img.item(), global_step=epoch)
+            wandb_dict["{}_Image_meanIOU".format(mode)] = mean_iou_img.item()
             self.recorder.tensorboard.add_scalar(
                 tag="{}_Image_meanRecall".format(mode), scalar_value=mean_recall_img.item(), global_step=epoch)
+            wandb_dict["{}_Image_meanRecall".format(mode)] = mean_recall_img.item()
+
+            wandb.log(wandb_dict)
 
             for i, (_, v) in enumerate(self.mapped_cls_name.items()):
                 self.recorder.tensorboard.add_scalar(

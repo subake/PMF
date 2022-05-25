@@ -108,6 +108,7 @@ class Inference(object):
                                           input_label.size(1), w_pad:w_pad+input_label.size(2)]
                 pred_argmax = pred_output[0].argmax(dim=0)
                 argmax = pred_output.argmax(dim=1)
+                
                 if self.settings.has_label:
                     self.pixel_eval.addBatch(argmax, input_label)
                     iter_miou, _ = self.pixel_eval.getIoU()
@@ -131,6 +132,7 @@ class Inference(object):
                 if self.settings.has_label:
                     sem_label, _ = self.salsa_loader.dataset.loadLabelByIndex(
                         i)
+
                     self.evaluator.addBatch(
                         pred_np, self.salsa_loader.dataset.class_map_lut[sem_label])
 
